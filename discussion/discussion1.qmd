@@ -1,0 +1,18 @@
+---
+title: "Discussion 1:"
+author: "Sofia Ingersoll"
+date: 2024-4-4
+---
+
+## Set Up
+
+```{r}
+
+```
+
+## Data Model 
+
+```{r}
+
+```
+
