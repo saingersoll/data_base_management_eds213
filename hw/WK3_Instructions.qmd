@@ -1,0 +1,166 @@
+---
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+# Week 3 - SQL problem 1
+
+It’s a useful skill in life (I’m not being rhetorical, I really mean
+that, it’s a useful skill) to be able to construct an experiment to
+answer a hypothesis.
+
+**Suppose you’re not sure what the AVG function returns if there are
+NULL values in the column being averaged.** **Suppose you either didn’t
+have access to any documentation, or didn’t trust it.**
+
+-   **What experiment could you run to find out what happens?**
+
+There are two parts to this problem. Part 1
+
+Construct an SQL experiment to determine the answer to the question
+above.
+
+-   **Does SQL abort with some kind of error?**
+
+-   **Does it ignore NULL values?**
+
+-   **Do the NULL values somehow factor into the calculation, and if so,
+    how?**
+
+I would suggest you start by creating a table (in the bird database, in
+a new database, in a transient in-memory database, doesn’t matter) with
+a single column that has data type REAL (for part 2 below, it must be
+REAL). You can make your table a temp table or not, your choice.
+
+\`\`\`{SQL}
+
+CREATE TEMP TABLE mytable... ;
+
+Now insert some real numbers and at least one NULL into your table.
+
+INSERT INTO mytable... ;
+
+(Hmm, can you insert multiple rows at once, or do you have to do a
+separate INSERT for each row?)
+
+Once you have your little table constructed, try doing an AVG on the
+column and see what is returned. What would the average be if the
+function ignored NULLs? What would the average be if it somehow factored
+them in? What is actually returned?
+
+Please submit both your SQL and your answer to the question about how
+AVG operates in the presence of NULL values. Part 2
+
+If SQL didn’t have an AVG function, you could compute the average value
+of a column by doing something like this on your table:
+
+SELECT SUM(mycolumn)/COUNT(\*) FROM mytable; SELECT
+SUM(mycolumn)/COUNT(mycolumn) FROM mytable;
+
+\`\`\`
+
+Which query above is correct? Please explain why.
+
+# Week 3 - SQL problem 2
+
+Part 1
+
+If we want to know which site has the largest area, it’s tempting to say
+
+SELECT Site_name, MAX(Area) FROM Site;
+
+Wouldn’t that be great? But DuckDB gives an error. And right it should!
+This query is conceptually flawed. Please describe what is wrong with
+this query. Don’t just quote DuckDB’s error message— explain why DuckDB
+is objecting to performing this query.
+
+To help you answer this question, you may want to consider:
+
+```         
+To the database, the above query is no different from
+    SELECT Site_name, AVG(Area) FROM Site
+    SELECT Site_name, COUNT(*) FROM Site
+    SELECT Site_name, SUM(Area) FROM Site
+
+In all these examples, the database sees that it is being asked to apply an aggregate function to a table column.
+
+When performing an aggregation, SQL wants to collapse the requested columns down to a single row. (For a table-level aggregation such as requested above, it wants to collapse the entire table down to a single row. For a GROUP BY, it wants to collapse each group down to a single row.)
+```
+
+Part 2
+
+Time for plan B. Find the site name and area of the site having the
+largest area. Do so by ordering the rows in a particularly convenient
+order, and using LIMIT to select just the first row. Your result should
+look like:
+
+┌──────────────┬────────┐ │ Site_name │ Area │ │ varchar │ float │
+├──────────────┼────────┤ │ Coats Island │ 1239.1 │
+└──────────────┴────────┘
+
+Please submit your SQL. Part 3
+
+Do the same, but use a nested query. First, create a query that finds
+the maximum area. Then, create a query that selects the site name and
+area of the site whose area equals the maximum. Your overall query will
+look something like:
+
+SELECT Site_name, Area FROM Site WHERE Area = (SELECT ...);
+
+# Week 3 - SQL problem 3
+
+Your mission is to list the scientific names of bird species in
+descending order of their maximum average egg volumes. That is, compute
+the average volume of the eggs in each nest, and then for the nests of
+each species compute the maximum of those average volumes, and list by
+species in descending order of maximum volume. You final table should
+look like:
+
+┌─────────────────────────┬────────────────────┐ │ Scientific_name │
+Max_avg_volume │ │ varchar │ double │
+├─────────────────────────┼────────────────────┤ │ Pluvialis squatarola
+│ 36541.8525390625 │ │ Pluvialis dominica │ 33847.853515625 │ │ Arenaria
+interpres │ 23338.6220703125 │ │ Calidris fuscicollis │
+13277.143310546875 │ │ Calidris alpina │ 12196.237548828125 │ │
+Charadrius semipalmatus │ 11266.974975585938 │ │ Phalaropus fulicarius │
+8906.775146484375 │ └─────────────────────────┴────────────────────┘
+
+(By the way, regarding the leader in egg size above, Birds of the World
+says that Pluvialis squatarola’s eggs are “Exceptionally large for size
+of female (ca. 16% weight of female)”.)
+
+To calculate the volume of an egg, use the simplified formula
+
+where is the egg width and is the egg length. You can use 3.14 for
+
+. (The real formula takes into account the ovoid shape of eggs, but only
+width and length are available to us here.)
+
+A good place to start is just to group bird eggs by nest (i.e., Nest_ID)
+and compute average volumes:
+
+CREATE TEMP TABLE Averages AS SELECT Nest_ID, AVG(...) AS Avg_volume
+FROM ... GROUP BY ...;
+
+You can now join that table with Bird_nests, so that you can group by
+species, and also join with the Species table to pick up scientific
+names. To do just the first of those joins, you could say something like
+
+SELECT Species, MAX(...) FROM Bird_nests JOIN Averages USING (Nest_ID)
+GROUP BY ...;
+
+(Notice how, if the joined columns have the same name, you can more
+compactly say USING (common_column) instead of ON column_a = column_b.)
+
+That’s not the whole story, we want scientific names not species codes.
+Another join is needed. A couple strategies here. One, you can modify
+the above query to also join with the Species table (you’ll need to
+replace USING with ON …). Two, you can save the above as another temp
+table and join it to Species separately.
+
+Don’t forget to order the results. Here it is convenient to give
+computed quantities nice names so you can refer to them.
+
+Please submit all of the SQL you used to solve the problem. Bonus points
+if you can do all of the above in one statement.
