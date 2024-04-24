@@ -36,3 +36,8 @@ SELECT Site, Site_avg_eggs.avg_egg_num - Site_avg_eggs_no_null.avg_egg_num AS av
     -- this is inner join by convention
     JOIN Site_avg_eggs_no_null USING (Site, Nest_ID);       -- as expected, the outputs are exactly the same!
 
+-- AVG does not consider NULL when computing the average!
+
+-- Choose the correct query
+SELECT SUM(mycolumn)/COUNT(*) FROM mytable;      -- this query is the most accurate bc it uses the * notation to select total observational count of the table
+SELECT SUM(mycolumn)/COUNT(mycolumn) FROM mytable;
