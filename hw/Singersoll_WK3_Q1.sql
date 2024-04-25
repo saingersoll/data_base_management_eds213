@@ -1,4 +1,7 @@
--- Q1
+-- Sofia Ingersoll
+-- WK3 Q1
+
+-- Part 1
 -- initiate database
 duckdb database.db
 
@@ -38,6 +41,11 @@ SELECT Site, Site_avg_eggs.avg_egg_num - Site_avg_eggs_no_null.avg_egg_num AS av
 
 -- AVG does not consider NULL when computing the average!
 
+
+-- Part 2
 -- Choose the correct query
 SELECT SUM(mycolumn)/COUNT(*) FROM mytable;      -- this query is the most accurate bc it uses the * notation to select total observational count of the table
 SELECT SUM(mycolumn)/COUNT(mycolumn) FROM mytable;
+
+-- if you want to delete table
+DROP TABLE mytable;
