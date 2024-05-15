@@ -1,0 +1,71 @@
+---
+title: "Who were the Winners? /n WK6 SQL Q3"
+author: "Sofia Ingersoll"
+date: 2024-05-15
+---
+
+At the conclusion of the ASDN project the PIs decided to hand out first, second, and third prizes to the observers who measured the most eggs. Who won? Please use R and dbplyr to answer this question, and please submit your R code. Your code should print out:
+
+
+```{r set_up, message = FALSE}
+library(tidyverse)
+library(DBI)
+library(dbplyr)
+library(duckdb)
+```
+## Connect to Database
+```{r db_connect}
+# we are using 0.10 version of database, 0.9 will not work here
+conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = "database.db") 
+```
+
+#### View tables in DB
+```{r view_tables}
+# need to provide the connection u want to list
+DBI::dbListTables(conn)
+```
+#### Select table in DB
+```{r store_tables}
+# pulling from db and storing as a table 
+egg_table <- tbl(conn, "Bird_eggs")
+
+observer_table <- tbl(conn, "Camp_Assignment")
+
+personnel_table <- tbl(conn, "Personnel")
+
+# quick peek
+head(egg_table,3)
+
+head(observer_table, 3)
+
+head(personnel_table, 3)
+```
+
+```{r join_tables}
+winners_table <- egg_table %>% 
+  # We want the be able to show the name of each observer, so we start by joining here
+  left_join(observer_table, by = c("Site","Year")) %>% 
+  # let's make our next join easy on us and match column names
+  mutate(Abbreviation = Observer) %>% 
+  # now we'll be able to see the full name of the observers
+  left_join(personnel_table, by = "Abbreviation") %>% 
+  # let's group by observer name
+  group_by(Name) %>% 
+  # and count how many eggs they weighed
+  summarize(total_eggs = n()) %>% 
+  # order them from greatest to least
+  arrange(desc(total_eggs)) %>% 
+  # select the top 3 survyers 
+  head(3) %>% 
+  # peep the SQL query
+  # tbh I could have written a SQL query that's more efficient than this R and the sql output provided
+  show_query()
+
+
+winners_table
+```
+
+#### Closing the connection
+```{r}
+DBI::dbDisconnect(conn, shutdown = TRUE)
+```
