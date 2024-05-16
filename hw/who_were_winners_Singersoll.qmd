@@ -1,5 +1,5 @@
 ---
-title: "Who were the Winners? /n WK6 SQL Q3"
+title: "Who were the Winners? \n\nWK6 SQL Q3"
 author: "Sofia Ingersoll"
 date: 2024-05-15
 ---
@@ -8,6 +8,7 @@ At the conclusion of the ASDN project the PIs decided to hand out first, second,
 
 
 ```{r set_up, message = FALSE}
+# let's load our libraries
 library(tidyverse)
 library(DBI)
 library(dbplyr)
@@ -33,36 +34,45 @@ observer_table <- tbl(conn, "Camp_Assignment")
 
 personnel_table <- tbl(conn, "Personnel")
 
-# quick peek
+nest_table <- tbl(conn, "Bird_nests")
+
+# quick peek at our tables
 head(egg_table,3)
 
 head(observer_table, 3)
 
 head(personnel_table, 3)
+
+head(nest_table,3)
 ```
 
-```{r join_tables}
-winners_table <- egg_table %>% 
-  # We want the be able to show the name of each observer, so we start by joining here
-  left_join(observer_table, by = c("Site","Year")) %>% 
+
+
+This was a funky fun one to work through. Left, right, group, count, arrange & filter!
+I defintely tried using a more SQL style of thinking my first few attempts and got some big total_egg numbers like 230!
+```{r winners_table}
+# let's look at our top observers!
+top_winners <- egg_table %>% 
+  # add all egg obs
+  # `right join`
+  # Vanessa Loverti	174			
+  # Dylan Kessler	134			
+  # Richard Lanctot	76
+  left_join(nest_table, by = c("Book_page","Year", "Site", "Nest_ID")) %>% 
   # let's make our next join easy on us and match column names
   mutate(Abbreviation = Observer) %>% 
   # now we'll be able to see the full name of the observers
-  left_join(personnel_table, by = "Abbreviation") %>% 
+  right_join(personnel_table, by = "Abbreviation") %>% 
   # let's group by observer name
   group_by(Name) %>% 
   # and count how many eggs they weighed
   summarize(total_eggs = n()) %>% 
   # order them from greatest to least
   arrange(desc(total_eggs)) %>% 
-  # select the top 3 survyers 
-  head(3) %>% 
-  # peep the SQL query
-  # tbh I could have written a SQL query that's more efficient than this R and the sql output provided
-  show_query()
+  # we want the top observers!
+  head(3)
 
-
-winners_table
+top_winners  
 ```
 
 #### Closing the connection
